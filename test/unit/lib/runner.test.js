@@ -35,6 +35,27 @@ describe('lib/runner', () => {
 			assert.isObject(pa11y);
 		});
 
+		describe('.initialize(options)', () => {
+			it('sets `__pa11y.version` to the `pa11yVersion` option', async () => {
+				await pa11y.initialize({
+					pa11yVersion: '1.2.3',
+					wait: 0
+				});
+				assert.strictEqual(pa11y.version, '1.2.3');
+			});
+
+			it('resolves with metadata object', async () => {
+				const resolvedValue = await pa11y.initialize({
+					pa11yVersion: '1.2.3',
+					wait: 0
+				});
+				assert.isObject(resolvedValue);
+				assert.strictEqual(resolvedValue.documentTitle, window.document.title);
+				assert.strictEqual(resolvedValue.pageUrl, window.location.href);
+				assert.strictEqual(resolvedValue.issues, []);
+			});
+		});
+
 		describe('.run(options)', () => {
 			let options;
 			let resolvedValue;
@@ -61,24 +82,20 @@ describe('lib/runner', () => {
 					}
 				];
 				pa11y.runners['mock-runner'] = sinon.stub().resolves(mockIssues);
-				resolvedValue = await pa11y.run(options);
+				resolvedValue = await pa11y.run(options, 'mock-runner');
 			});
 
-			it('sets `__pa11y.version` to the `pa11yVersion` option', () => {
-				assert.strictEqual(pa11y.version, '1.2.3');
-			});
-
-			it('runs all of the specified runners with the options and runner', () => {
+			it('runs the specified runner with the options and runner name', () => {
 				assert.calledOnce(pa11y.runners['mock-runner']);
 				assert.calledWithExactly(pa11y.runners['mock-runner'], options, pa11y);
 			});
 
-			it('resolves with page details and an array of issues', () => {
-				assert.isObject(resolvedValue);
+			it('resolves with array of issues', () => {
+				assert.isArray(resolvedValue);
 				assert.strictEqual(resolvedValue.documentTitle, window.document.title);
 				assert.strictEqual(resolvedValue.pageUrl, window.location.href);
-				assert.isArray(resolvedValue.issues);
-				assert.deepEqual(resolvedValue.issues, [
+				// Assert.isArray(resolvedValue.issues);
+				assert.deepEqual(resolvedValue, [
 					{
 						code: 'mock-code',
 						context: '<element>mock-html</element>',
